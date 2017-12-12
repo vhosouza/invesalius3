@@ -226,7 +226,7 @@ def object_registration(fiducials, orients, coord_raw, m_change):
     # compute initial alignment of probe fixed in the object in source frame
     t_s0_raw = np.asmatrix(tr.translation_matrix(coords[3, :3]))
     r_s0_raw = np.asmatrix(tr.euler_matrix(np.radians(coords[3, 3]), np.radians(coords[3, 4]),
-                             np.radians(coords[3, 5]), 'rzyx'))
+                                           np.radians(coords[3, 5]), 'rzyx'))
     s0_raw = np.asmatrix(tr.concatenate_matrices(t_s0_raw, r_s0_raw))
 
     # compute change of basis for object fiducials in source frame
