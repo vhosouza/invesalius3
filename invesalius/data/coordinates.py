@@ -54,21 +54,21 @@ def GetCoordinates(trck_init, trck_id, ref_mode):
 
 def ClaronCoord(trck_init, trck_id, ref_mode):
     trck = trck_init[0]
-    scale = np.array([1.0, 1.0, -1.0])
+    scale = np.array([1.0, 1.0, 1.0])
 
     trck.Run()
 
     coord1 = np.array([float(trck.PositionTooltipX1) * scale[0], float(trck.PositionTooltipY1) * scale[1],
                        float(trck.PositionTooltipZ1) * scale[2],
-                       float(trck.AngleX1), float(trck.AngleY1), float(trck.AngleZ1)])
+                       float(trck.AngleZ1), float(trck.AngleY1), float(trck.AngleX1)])
 
     coord2 = np.array([float(trck.PositionTooltipX2) * scale[0], float(trck.PositionTooltipY2) * scale[1],
                        float(trck.PositionTooltipZ2) * scale[2],
-                       float(trck.AngleX2), float(trck.AngleY2), float(trck.AngleZ2)])
+                       float(trck.AngleZ2), float(trck.AngleY2), float(trck.AngleX2)])
 
     coord3 = np.array([float(trck.PositionTooltipX3) * scale[0], float(trck.PositionTooltipY3) * scale[1],
                        float(trck.PositionTooltipZ3) * scale[2],
-                       float(trck.AngleX3), float(trck.AngleY3), float(trck.AngleZ3)])
+                       float(trck.AngleZ3), float(trck.AngleY3), float(trck.AngleX3)])
 
     coord = np.vstack([coord1, coord2, coord3])
 
