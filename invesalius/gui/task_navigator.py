@@ -954,7 +954,7 @@ class MarkersPanel(wx.Panel):
         self.nav_status = False
 
         self.marker_colour = (0.0, 0.0, 1.)
-        self.marker_size = 4
+        self.marker_size = 2
 
         # Change marker size
         spin_size = wx.SpinCtrl(self, -1, "", size=wx.Size(40, 23))
