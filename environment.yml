@@ -1,0 +1,20 @@
+name: invesalius
+channels:
+  - default
+  - conda-forge
+  - bioconda
+dependencies:
+  - python>=3.6
+  - wxpython
+  - numpy
+  - scipy
+  - pillow
+  - matplotlib
+  - scikit-image
+  - nibabel
+  - pyserial
+  - psutil
+  - cython
+  - pip:
+    - nibabel
+    
