@@ -377,6 +377,8 @@ class Slice(metaclass=utils.Singleton):
             self.SetMaskEditionThreshold(index, threshold_range)
 
     def __set_current_mask_threshold(self, threshold_range):
+        if self.current_mask is None:
+            return
         index = self.current_mask.index
         self.num_gradient += 1
         self.current_mask.matrix[:] = 0
@@ -417,6 +419,8 @@ class Slice(metaclass=utils.Singleton):
             Publisher.sendMessage("Reload actual slice")
 
     def __set_current_mask_threshold_actual_slice(self, threshold_range):
+        if self.current_mask is None:
+            return
         index = self.current_mask.index
         for orientation in self.buffer_slices:
             self.buffer_slices[orientation].discard_vtk_mask()
@@ -1140,8 +1144,14 @@ class Slice(metaclass=utils.Singleton):
 
         if value:
             threshold_range = proj.mask_dict[index].threshold_range
+            edition_threshold_range = proj.mask_dict[index].edition_threshold_range
             Publisher.sendMessage(
-                "Set edition threshold gui", threshold_range=threshold_range
+                "Set edition threshold gui",
+                threshold_range=edition_threshold_range
+            )
+            Publisher.sendMessage(
+                "Set threshold values in gradient",
+                threshold_range=threshold_range
             )
 
         if index == self.current_mask.index:

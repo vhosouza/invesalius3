@@ -1456,6 +1456,15 @@ class Viewer(wx.Panel):
         self.mark_actor.SetPosition(coord_offset)
         self.Refresh()
 
+    def CreateMarkerOffset(self):
+        self.mark_actor = self.add_marker([0., 0., 0.], color=[0., 1., 1.])
+        self.ren.AddActor(self.mark_actor)
+        self.Refresh()
+
+    def UpdateMarkerOffsetPosition(self, coord_offset):
+        self.mark_actor.SetPosition(coord_offset)
+        self.Refresh()
+
     def UpdateObjectOrientation(self, m_img, coord):
         # print("Update object orientation")
 
