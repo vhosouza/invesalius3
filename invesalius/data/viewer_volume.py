@@ -311,7 +311,7 @@ class Viewer(wx.Panel):
         Publisher.subscribe(self.UpdateMarkerOffsetPosition, 'Update marker offset')
         Publisher.subscribe(self.AddPeeledSurface, 'Update peel')
 
-        Publisher.subscribe(self.CreateGrid, 'Create grid')
+        # Publisher.subscribe(self.CreateGrid, 'Create grid')
 
     def SetStereoMode(self, mode):
         ren_win = self.interactor.GetRenderWindow()
@@ -564,73 +564,115 @@ class Viewer(wx.Panel):
         actor = self.points_reference.pop(point)
         self.ren.RemoveActor(actor)
 
-    def CreateGrid(self, data, affine):
-        print("Creating grid")
+    # def CreateGrid(self, data, affine):
+    #     print("Creating grid")
+    #
+    #     coord_list_w = imu.create_grid()
+    #     prj_data = prj.Project()
+    #     matrix_shape = tuple(prj_data.matrix_shape)
+    #     img_shift = matrix_shape[1]
+    #
+    #     pos = [40.17, 152.28, 235.78, -18.22, -25.27, 64.99]
+    #     pos[1] = -pos[1]
+    #     a, b, g = np.radians(pos[3:])
+    #     r_ref = tr.euler_matrix(a, b, g, 'sxyz')
+    #     t_ref = tr.translation_matrix(pos[:3])
+    #     m_coil = tr.concatenate_matrices(t_ref, r_ref)
+    #
+    #     # apply the coil transformation matrix
+    #     coord_list_w_tr = m_coil @ coord_list_w
+    #     # convert to int so coordinates can be used as indices in the MRI image space
+    #     coord_list_w_tr_mri = coord_list_w_tr[:3, :].T.astype(int) + np.array([[0, img_shift, 0]])
+    #     coord_list_w_tr_inv = coord_list_w_tr[:3, :].T.astype(int)
+    #     coord_list_w_tr_inv_0 = coord_list_w[:3, :].T.astype(int)
+    #
+    #     actor_grid = self.create_actor_grid(coord_list_w_tr_inv_0, m_coil)
+    #     self.ren.AddActor(actor_grid)
+    #
+    #     # extract the first occurrence of a specific label from the MRI image
+    #     labs = data[coord_list_w_tr_mri[..., 0], coord_list_w_tr_mri[..., 1], coord_list_w_tr_mri[..., 2]]
+    #     lab_first = np.argmax(labs == 1)
+    #     if labs[lab_first] == 1:
+    #         pt_found = coord_list_w_tr_mri[lab_first, :]
+    #         # convert coordinate back to invesalius 3D space
+    #         pt_found_inv = pt_found - np.array([0., img_shift, 0.])
+    #         # _ = add_marker(pt_found, ren, [0., 0., 1.], radius=1)
+    #         mark_actor = self.add_marker(pt_found_inv, color=[0., 1., 1.])
+    #         self.ren.AddActor(mark_actor)
+    #
+    #     # convert to world coordinate space to use as seed for fiber tracking
+    #     pt_found_tr = np.append(pt_found_inv, 1)[np.newaxis, :].T
+    #     # default affine in invesalius is actually the affine inverse
+    #     pt_found_tr = np.linalg.inv(affine) @ pt_found_tr
+    #     pt_found_tr = pt_found_tr[:3, 0, np.newaxis].T
+    #     print("pt_found_tr: {}".format(pt_found_tr))
+    #
+    #     self.Refresh()
 
-        coord_list_w = imu.create_grid()
-        prj_data = prj.Project()
-        matrix_shape = tuple(prj_data.matrix_shape)
-        img_shift = matrix_shape[1]
-
-        pos = [40.17, 152.28, 235.78, -18.22, -25.27, 64.99]
-        pos[1] = -pos[1]
-        a, b, g = np.radians(pos[3:])
-        r_ref = tr.euler_matrix(a, b, g, 'sxyz')
-        t_ref = tr.translation_matrix(pos[:3])
-        m_coil = tr.concatenate_matrices(t_ref, r_ref)
-
-        # apply the coil transformation matrix
-        coord_list_w_tr = m_coil @ coord_list_w
-        # convert to int so coordinates can be used as indices in the MRI image space
-        coord_list_w_tr_mri = coord_list_w_tr[:3, :].T.astype(int) + np.array([[0, img_shift, 0]])
-        coord_list_w_tr_inv = coord_list_w_tr[:3, :].T.astype(int)
-        coord_list_w_tr_inv_0 = coord_list_w[:3, :].T.astype(int)
-
-        actor_grid = self.create_actor_grid(coord_list_w_tr_inv_0, m_coil)
-        self.ren.AddActor(actor_grid)
-
-        # extract the first occurrence of a specific label from the MRI image
-        labs = data[coord_list_w_tr_mri[..., 0], coord_list_w_tr_mri[..., 1], coord_list_w_tr_mri[..., 2]]
-        lab_first = np.argmax(labs == 1)
-        if labs[lab_first] == 1:
-            pt_found = coord_list_w_tr_mri[lab_first, :]
-            # convert coordinate back to invesalius 3D space
-            pt_found_inv = pt_found - np.array([0., img_shift, 0.])
-            # _ = add_marker(pt_found, ren, [0., 0., 1.], radius=1)
-            mark_actor = self.add_marker(pt_found_inv, color=[0., 1., 1.])
-            self.ren.AddActor(mark_actor)
-
-        # convert to world coordinate space to use as seed for fiber tracking
-        pt_found_tr = np.append(pt_found_inv, 1)[np.newaxis, :].T
-        # default affine in invesalius is actually the affine inverse
-        pt_found_tr = np.linalg.inv(affine) @ pt_found_tr
-        pt_found_tr = pt_found_tr[:3, 0, np.newaxis].T
-        print("pt_found_tr: {}".format(pt_found_tr))
-
-        self.Refresh()
-
-    def create_actor_grid(self, coord_list_w_tr_inv_0, m_coil):
-        branch = vtk.vtkMultiBlockDataSet()
-        m_coil_vtk = vtku.numpy_to_vtkMatrix4x4(m_coil)
-        for n, center in enumerate(coord_list_w_tr_inv_0.tolist()):
-            ball_ref = vtk.vtkSphereSource()
-            ball_ref.SetRadius(1)
-            ball_ref.SetCenter(center)
-            ball_ref.Update()
-
-            # mark_actors.append(self.add_marker(n, color=[1., 1., 1.]))
-            # for n, tube in enumerate(mark_actors):
-            branch.SetBlock(n, ball_ref.GetOutput())
-
-        mapper = vtk.vtkCompositePolyDataMapper2()
-        mapper.SetInputDataObject(branch)
-
-        actor_grid = vtk.vtkActor()
-        actor_grid.SetMapper(mapper)
-        actor_grid.SetUserMatrix(m_coil_vtk)
-        actor_grid.GetProperty().SetOpacity(.5)
-
-        return actor_grid
+    # def CreateGrid(self):
+    #     print("Creating grid")
+    #
+    #     coord_list_w = imu.create_grid()
+    #     prj_data = prj.Project()
+    #     matrix_shape = tuple(prj_data.matrix_shape)
+    #     self.img_shift = matrix_shape[1]
+    #
+    #     self.coord_list_w = coord_list_w.copy()
+    #
+    # def UpdateGrid(self, data, affine, m_coil):
+    #
+    #     # apply the coil transformation matrix
+    #     coord_list_w_tr = m_coil @ self.coord_list_w
+    #     # convert to int so coordinates can be used as indices in the MRI image space
+    #     coord_list_w_tr_mri = coord_list_w_tr[:3, :].T.astype(int) + np.array([[0, self.img_shift, 0]])
+    #     coord_list_w_tr_inv = coord_list_w_tr[:3, :].T.astype(int)
+    #     coord_list_w_tr_inv_0 = self.coord_list_w[:3, :].T.astype(int)
+    #
+    #     actor_grid = self.create_actor_grid(coord_list_w_tr_inv_0, m_coil)
+    #     self.ren.AddActor(actor_grid)
+    #
+    #     # extract the first occurrence of a specific label from the MRI image
+    #     labs = data[coord_list_w_tr_mri[..., 0], coord_list_w_tr_mri[..., 1], coord_list_w_tr_mri[..., 2]]
+    #     lab_first = np.argmax(labs == 1)
+    #     if labs[lab_first] == 1:
+    #         pt_found = coord_list_w_tr_mri[lab_first, :]
+    #         # convert coordinate back to invesalius 3D space
+    #         pt_found_inv = pt_found - np.array([0., self.img_shift, 0.])
+    #         # _ = add_marker(pt_found, ren, [0., 0., 1.], radius=1)
+    #         mark_actor = self.add_marker(pt_found_inv, color=[0., 1., 1.])
+    #         self.ren.AddActor(mark_actor)
+    #
+    #     # convert to world coordinate space to use as seed for fiber tracking
+    #     pt_found_tr = np.append(pt_found_inv, 1)[np.newaxis, :].T
+    #     # default affine in invesalius is actually the affine inverse
+    #     pt_found_tr = np.linalg.inv(affine) @ pt_found_tr
+    #     pt_found_tr = pt_found_tr[:3, 0, np.newaxis].T
+    #     print("pt_found_tr: {}".format(pt_found_tr))
+    #
+    #     self.Refresh()
+    #
+    # def create_actor_grid(self, coord_list_w_tr_inv_0, m_coil):
+    #     branch = vtk.vtkMultiBlockDataSet()
+    #     m_coil_vtk = vtku.numpy_to_vtkMatrix4x4(m_coil)
+    #     for n, center in enumerate(coord_list_w_tr_inv_0.tolist()):
+    #         ball_ref = vtk.vtkSphereSource()
+    #         ball_ref.SetRadius(1)
+    #         ball_ref.SetCenter(center)
+    #         ball_ref.Update()
+    #
+    #         # mark_actors.append(self.add_marker(n, color=[1., 1., 1.]))
+    #         # for n, tube in enumerate(mark_actors):
+    #         branch.SetBlock(n, ball_ref.GetOutput())
+    #
+    #     mapper = vtk.vtkCompositePolyDataMapper2()
+    #     mapper.SetInputDataObject(branch)
+    #
+    #     self.actor_grid = vtk.vtkActor()
+    #     self.actor_grid.SetMapper(mapper)
+    #     # actor_grid.SetUserMatrix(m_coil_vtk)
+    #     self.actor_grid.GetProperty().SetOpacity(.5)
+    #
+    #     # return actor_grid
 
     def AddMarker(self, ball_id, size, colour, coord):
         """
@@ -1405,10 +1447,10 @@ class Viewer(wx.Panel):
                 self.mark_actor = None
         self.Refresh()
 
-    def CreateMarkerOffset(self):
-        self.mark_actor = self.add_marker([0., 0., 0.], color=[0., 1., 1.])
-        self.ren.AddActor(self.mark_actor)
-        self.Refresh()
+    # def CreateMarkerOffset(self):
+    #     self.mark_actor = self.add_marker([0., 0., 0.], color=[0., 1., 1.])
+    #     self.ren.AddActor(self.mark_actor)
+    #     self.Refresh()
 
     def UpdateMarkerOffsetPosition(self, coord_offset):
         self.mark_actor.SetPosition(coord_offset)
