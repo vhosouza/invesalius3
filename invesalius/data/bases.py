@@ -260,7 +260,7 @@ def object_registration(fiducials, orients, coord_raw, m_change):
         coord_img = list(M_img[:3, -1])
         coord_img[1] = -coord_img[1]
 
-        fids_img[ic, :] = np.hstack((coord_img[:3, 0], angles_img))
+        fids_img[ic, :] = np.hstack((coord_img, angles_img))
 
     # compute object base change in vtk head frame
     base_obj_img, _ = base_creation(fids_img[:3, :3])
