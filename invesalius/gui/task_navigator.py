@@ -18,7 +18,7 @@
 #--------------------------------------------------------------------------
 
 from functools import partial
-# import os
+import os
 import queue
 import sys
 import threading
@@ -320,6 +320,7 @@ class NeuronavigationPanel(wx.Panel):
         self.trekker = None
         self.n_threads = None
         self.view_tracts = False
+        self.enable_act = False
         self.act_data = None
         self.n_tracts = const.N_TRACTS
         self.seed_offset = const.SEED_OFFSET
@@ -446,6 +447,7 @@ class NeuronavigationPanel(wx.Panel):
         Publisher.subscribe(self.UpdateSleep, 'Update sleep')
         Publisher.subscribe(self.UpdateNumberThreads, 'Update number of threads')
         Publisher.subscribe(self.UpdateTractsVisualization, 'Update tracts visualization')
+        Publisher.subscribe(self.EnableACT, 'Enable ACT')
         Publisher.subscribe(self.UpdateACTData, 'Update ACT data')
 
     def LoadImageFiducials(self, marker_id, coord):
@@ -490,6 +492,9 @@ class NeuronavigationPanel(wx.Panel):
 
     def UpdateACTData(self, data):
         self.act_data = data
+
+    def EnableACT(self, data):
+        self.enable_act = data
 
     def UpdateImageCoordinates(self, arg, position):
         # TODO: Change from world coordinates to matrix coordinates. They are better for multi software communication.
@@ -790,8 +795,12 @@ class NeuronavigationPanel(wx.Panel):
                         self.trk_inp = self.trekker, affine, self.seed_offset, self.n_tracts, self.seed_radius,\
                                        self.n_threads, self.act_data, affine_vtk, matrix_shape[1]
                         # print("Appending the tract computation thread!")
-                        jobs_list.append(dti.ComputeTractsThread(self.trk_inp, self.coord_tracts_queue,
-                                                                 self.tracts_queue, self.event, self.sleep_nav))
+                        if self.enable_act:
+                            jobs_list.append(dti.ComputeTractsACTThread(self.trk_inp, self.coord_tracts_queue,
+                                                                     self.tracts_queue, self.event, self.sleep_nav))
+                        else:
+                            jobs_list.append(dti.ComputeTractsThread(self.trk_inp, self.coord_tracts_queue,
+                                                                        self.tracts_queue, self.event, self.sleep_nav))
 
                     jobs_list.append(UpdateNavigationScene(vis_queues, vis_components,
                                                            self.event, self.sleep_nav))
@@ -1027,11 +1036,11 @@ class ObjectRegistrationPanel(wx.Panel):
             dlg.ShowNavigationTrackerWarning(0, 'choose')
 
     def OnLinkLoad(self, event=None):
-        filename = dlg.ShowLoadSaveDialog(message=_(u"Load object registration"),
-                                          wildcard=_("Registration files (*.obr)|*.obr"))
-        # data_dir = os.environ.get('OneDrive') + r'\data\dti_navigation\baran\pilot_20200131'
-        # coil_path = 'magstim_coil_dell_laptop.obr'
-        # filename = os.path.join(data_dir, coil_path)
+        # filename = dlg.ShowLoadSaveDialog(message=_(u"Load object registration"),
+        #                                   wildcard=_("Registration files (*.obr)|*.obr"))
+        data_dir = os.environ.get('OneDrive') + r'\data\dti_navigation\baran\anat_reg_improve_20200609'
+        coil_path = 'magstim_coil_dell_laptop.obr'
+        filename = os.path.join(data_dir, coil_path)
 
         try:
             if filename:
@@ -1353,11 +1362,11 @@ class MarkersPanel(wx.Panel):
             self.CreateMarker(self.current_coord, self.marker_colour, self.marker_size)
 
     def OnLoadMarkers(self, evt):
-        filename = dlg.ShowLoadSaveDialog(message=_(u"Load markers"),
-                                          wildcard=_("Markers files (*.mks)|*.mks"))
-        # data_dir = os.environ.get('OneDrive') + r'\data\dti_navigation\baran\pilot_20200131'
-        # marker_path = 'markers.mks'
-        # filename = os.path.join(data_dir, marker_path)
+        # filename = dlg.ShowLoadSaveDialog(message=_(u"Load markers"),
+        #                                   wildcard=_("Markers files (*.mks)|*.mks"))
+        data_dir = os.environ.get('OneDrive') + r'\data\dti_navigation\baran\anat_reg_improve_20200609'
+        marker_path = 'markers.mks'
+        filename = os.path.join(data_dir, marker_path)
 
         if filename:
             try:
@@ -1521,7 +1530,7 @@ class TractographyPanel(wx.Panel):
 
         # Button for import config coil file
         tooltip = wx.ToolTip(_("Load FOD"))
-        btn_load = wx.Button(self, -1, _("Load FOD"), size=wx.Size(65, 23))
+        btn_load = wx.Button(self, -1, _("FOD"), size=wx.Size(50, 23))
         btn_load.SetToolTip(tooltip)
         btn_load.Enable(1)
         btn_load.Bind(wx.EVT_BUTTON, self.OnLinkFOD)
@@ -1537,7 +1546,7 @@ class TractographyPanel(wx.Panel):
 
         # Button for creating new coil
         tooltip = wx.ToolTip(_("Load brain visualization"))
-        btn_mask = wx.Button(self, -1, _("Load brain"), size=wx.Size(65, 23))
+        btn_mask = wx.Button(self, -1, _("Brain"), size=wx.Size(50, 23))
         btn_mask.SetToolTip(tooltip)
         btn_mask.Enable(1)
         btn_mask.Bind(wx.EVT_BUTTON, self.OnLinkBrain)
@@ -1545,7 +1554,7 @@ class TractographyPanel(wx.Panel):
 
         # Button for creating new coil
         tooltip = wx.ToolTip(_("Load anatomical labels"))
-        btn_act = wx.Button(self, -1, _("Load ACT"), size=wx.Size(65, 23))
+        btn_act = wx.Button(self, -1, _("ACT"), size=wx.Size(50, 23))
         btn_act.SetToolTip(tooltip)
         btn_act.Enable(1)
         btn_act.Bind(wx.EVT_BUTTON, self.OnLoadACT)
@@ -1553,10 +1562,10 @@ class TractographyPanel(wx.Panel):
 
         # Create a horizontal sizer to represent button save
         line_btns = wx.BoxSizer(wx.HORIZONTAL)
-        line_btns.Add(btn_load, 1, wx.LEFT | wx.TOP | wx.RIGHT, 4)
-        line_btns.Add(btn_load_cfg, 1, wx.LEFT | wx.TOP | wx.RIGHT, 4)
-        line_btns.Add(btn_mask, 1, wx.LEFT | wx.TOP | wx.RIGHT, 4)
-        line_btns.Add(btn_act, 1, wx.LEFT | wx.TOP | wx.RIGHT, 4)
+        line_btns.Add(btn_load, 1, wx.LEFT | wx.TOP | wx.RIGHT, 2)
+        line_btns.Add(btn_load_cfg, 1, wx.LEFT | wx.TOP | wx.RIGHT, 2)
+        line_btns.Add(btn_mask, 1, wx.LEFT | wx.TOP | wx.RIGHT, 2)
+        line_btns.Add(btn_act, 1, wx.LEFT | wx.TOP | wx.RIGHT, 2)
 
         # Change peeling depth
         text_peel_depth = wx.StaticText(self, -1, _("Peeling depth (mm):"))
@@ -1655,10 +1664,18 @@ class TractographyPanel(wx.Panel):
         checkpeeling.Bind(wx.EVT_CHECKBOX, partial(self.OnShowPeeling, ctrl=checkpeeling))
         self.checkpeeling = checkpeeling
 
+        # Check box to enable tract visualization
+        checkACT = wx.CheckBox(self, -1, _('ACT'))
+        checkACT.SetValue(False)
+        checkACT.Enable(0)
+        checkACT.Bind(wx.EVT_CHECKBOX, partial(self.OnEnableACT, ctrl=checkACT))
+        self.checkACT = checkACT
+
         border_last = 1
         line_checks = wx.BoxSizer(wx.HORIZONTAL)
         line_checks.Add(checktracts, 0, wx.ALIGN_LEFT | wx.RIGHT | wx.LEFT, border_last)
-        line_checks.Add(checkpeeling, 0, wx.ALIGN_RIGHT | wx.RIGHT | wx.LEFT, border_last)
+        line_checks.Add(checkpeeling, 0, wx.ALIGN_CENTER | wx.RIGHT | wx.LEFT, border_last)
+        line_checks.Add(checkACT, 0, wx.ALIGN_RIGHT | wx.RIGHT | wx.LEFT, border_last)
 
         # Add line sizers into main sizer
         border = 1
@@ -1727,6 +1744,14 @@ class TractographyPanel(wx.Panel):
             Publisher.sendMessage('Remove tracts')
             Publisher.sendMessage("Update marker offset state", create=False)
 
+    def OnEnableACT(self, evt, ctrl):
+        # self.view_peeling = ctrl.GetValue()
+        # if ctrl.GetValue():
+        #     act_data = self.brain_peel.get_actor(self.peel_depth)
+        # else:
+        #     actor = None
+        Publisher.sendMessage('Enable ACT', data=ctrl.GetValue())
+
     def UpdateNavigationStatus(self, nav_status, vis_status):
         self.nav_status = nav_status
 
@@ -1734,13 +1759,13 @@ class TractographyPanel(wx.Panel):
 
         Publisher.sendMessage('Update status text in GUI', label=_("Busy"))
         Publisher.sendMessage('Begin busy cursor')
-        mask_path = dlg.ShowImportOtherFilesDialog(const.ID_TREKKER_MASK)
-        img_path = dlg.ShowImportOtherFilesDialog(const.ID_TREKKER_IMG)
-        # data_dir = os.environ.get('OneDriveConsumer') + '\\data\\dti'
-        # mask_file = 'sub-P0_dwi_mask.nii'
-        # mask_path = os.path.join(data_dir, mask_file)
-        # img_file = 'sub-P0_T1w_biascorrected.nii'
-        # img_path = os.path.join(data_dir, img_file)
+        # mask_path = dlg.ShowImportOtherFilesDialog(const.ID_TREKKER_MASK)
+        # img_path = dlg.ShowImportOtherFilesDialog(const.ID_TREKKER_IMG)
+        data_dir = os.environ.get('OneDrive') + r'\data\dti_navigation\baran\anat_reg_improve_20200609'
+        mask_file = 'Baran_brain_mask.nii'
+        mask_path = os.path.join(data_dir, mask_file)
+        img_file = 'Baran_T1_inFODspace.nii'
+        img_path = os.path.join(data_dir, img_file)
 
         if not self.affine_vtk:
             slic = sl.Slice()
@@ -1767,14 +1792,14 @@ class TractographyPanel(wx.Panel):
     def OnLinkFOD(self, event=None):
         Publisher.sendMessage('Update status text in GUI', label=_("Busy"))
         Publisher.sendMessage('Begin busy cursor')
-        filename = dlg.ShowImportOtherFilesDialog(const.ID_TREKKER_FOD)
+        # filename = dlg.ShowImportOtherFilesDialog(const.ID_TREKKER_FOD)
         # Juuso
         # data_dir = os.environ.get('OneDriveConsumer') + '\\data\\dti'
         # FOD_path = 'sub-P0_dwi_FOD.nii'
         # Baran
-        # data_dir = os.environ.get('OneDrive') + r'\data\dti_navigation\baran\pilot_20200131'
-        # FOD_path = 'Baran_FOD.nii'
-        # filename = os.path.join(data_dir, FOD_path)
+        data_dir = os.environ.get('OneDrive') + r'\data\dti_navigation\baran\anat_reg_improve_20200609'
+        FOD_path = 'Baran_FOD.nii'
+        filename = os.path.join(data_dir, FOD_path)
 
         # if not self.affine_vtk:
         #     slic = sl.Slice()
@@ -1809,8 +1834,8 @@ class TractographyPanel(wx.Panel):
     def OnLoadACT(self, event=None):
         import os
         import nibabel as nb
-        # Publisher.sendMessage('Update status text in GUI', label=_("Busy"))
-        # Publisher.sendMessage('Begin busy cursor')
+        Publisher.sendMessage('Update status text in GUI', label=_("Busy"))
+        Publisher.sendMessage('Begin busy cursor')
         # filename = dlg.ShowImportOtherFilesDialog(const.ID_TREKKER_ACT)
         # Baran
         data_dir = os.environ.get('OneDrive') + r'\data\dti_navigation\baran\anat_reg_improve_20200609'
@@ -1830,13 +1855,17 @@ class TractographyPanel(wx.Panel):
             self.affine[1, -1] -= matrix_shape[1]
             self.affine_vtk = vtk_utils.numpy_to_vtkMatrix4x4(self.affine)
 
+        self.checkACT.Enable(1)
+        self.checkACT.SetValue(True)
+
         Publisher.sendMessage('Update ACT data', data=act_data_arr)
+        Publisher.sendMessage('Enable ACT', data=True)
         # Publisher.sendMessage('Create grid', data=act_data_arr, affine=self.affine)
         # Publisher.sendMessage('Update number of threads', data=n_threads)
         # Publisher.sendMessage('Update tracts visualization', data=1)
         # Publisher.sendMessage('Update status text in GUI', label=_("Trekker initialized"))
 
-        # Publisher.sendMessage('End busy cursor')
+        Publisher.sendMessage('End busy cursor')
 
     def OnLoadParameters(self, event=None):
         import json
@@ -1887,6 +1916,8 @@ class TractographyPanel(wx.Panel):
         self.checktracts.Enable(0)
         self.checkpeeling.SetValue(False)
         self.checkpeeling.Enable(0)
+        self.checkACT.SetValue(False)
+        self.checkACT.Enable(0)
 
         self.spin_opacity.SetValue(const.BRAIN_OPACITY)
         self.spin_opacity.Enable(0)
@@ -1948,45 +1979,50 @@ class UpdateNavigationScene(threading.Thread):
         self.event = event
 
     def run(self):
-        # count = 0
         while not self.event.is_set():
-            got_coords = False
+            # NOTE: use of CallAfter is mandatory otherwise crashes the wx interface
             try:
                 coord, m_img, view_obj = self.coord_queue.get_nowait()
-                got_coords = True
-
-                # print('UpdateScene: get {}'.format(count))
-
-                # use of CallAfter is mandatory otherwise crashes the wx interface
-                if self.view_tracts:
-                    bundle, affine_vtk, coord_offset = self.tracts_queue.get_nowait()
-                    wx.CallAfter(Publisher.sendMessage, 'Remove tracts')
-                    wx.CallAfter(Publisher.sendMessage, 'Update tracts', flag=True, root=bundle,
-                                 affine_vtk=affine_vtk)
-                    wx.CallAfter(Publisher.sendMessage, 'Update marker offset', coord_offset=coord_offset)
-                    self.tracts_queue.task_done()
-
-                if self.trigger_state:
-                    trigger_on = self.trigger_queue.get_nowait()
-                    if trigger_on:
-                        wx.CallAfter(Publisher.sendMessage, 'Create marker')
-                    self.trigger_queue.task_done()
 
                 # TODO: If using the view_tracts substitute the raw coord from the offset coordinate, so the user
                 # see the red cross in the position of the offset marker
                 wx.CallAfter(Publisher.sendMessage, 'Update cross position', arg=m_img, position=coord)
-
                 if view_obj:
                     wx.CallAfter(Publisher.sendMessage, 'Update object matrix', m_img=m_img, coord=coord)
-
                 self.coord_queue.task_done()
-                # print('UpdateScene: done {}'.format(count))
-                # count += 1
-
-                sleep(self.sle)
             except queue.Empty:
-                if got_coords:
+                try:
                     self.coord_queue.task_done()
+                except ValueError:
+                    pass
+
+            if self.trigger_state:
+                try:
+                    trigger_on = self.trigger_queue.get_nowait()
+                    if trigger_on:
+                        wx.CallAfter(Publisher.sendMessage, 'Create marker')
+                    self.trigger_queue.task_done()
+                except queue.Empty:
+                    try:
+                        self.trigger_queue.task_done()
+                    except ValueError:
+                        pass
+
+            if self.view_tracts:
+                try:
+                    bundle, affine_vtk, coord_offset = self.tracts_queue.get_nowait()
+                    wx.CallAfter(Publisher.sendMessage, 'Remove tracts')
+                    wx.CallAfter(Publisher.sendMessage, 'Update marker offset', coord_offset=coord_offset)
+                    wx.CallAfter(Publisher.sendMessage, 'Update tracts', flag=True, root=bundle,
+                                 affine_vtk=affine_vtk)
+                    self.tracts_queue.task_done()
+                except queue.Empty:
+                    try:
+                        self.tracts_queue.task_done()
+                    except ValueError:
+                        pass
+
+            sleep(self.sle)
 
 
 class InputAttributes(object):
