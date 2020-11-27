@@ -1760,8 +1760,8 @@ class TractographyPanel(wx.Panel):
 
         Publisher.sendMessage('Update status text in GUI', label=_("Busy"))
         Publisher.sendMessage('Begin busy cursor')
-        mask_path = dlg.ShowImportOtherFilesDialog(const.ID_TREKKER_MASK)
-        img_path = dlg.ShowImportOtherFilesDialog(const.ID_TREKKER_IMG)
+        mask_path = dlg.ShowImportOtherFilesDialog(const.ID_NIFTI_IMPORT, _("Import brain mask"))
+        img_path = dlg.ShowImportOtherFilesDialog(const.ID_NIFTI_IMPORT, _("Import T1 anatomical image"))
         # data_dir = os.environ.get('OneDrive') + r'\data\dti_navigation\baran\anat_reg_improve_20200609'
         # mask_file = 'Baran_brain_mask.nii'
         # mask_path = os.path.join(data_dir, mask_file)
@@ -1793,7 +1793,7 @@ class TractographyPanel(wx.Panel):
     def OnLinkFOD(self, event=None):
         Publisher.sendMessage('Update status text in GUI', label=_("Busy"))
         Publisher.sendMessage('Begin busy cursor')
-        filename = dlg.ShowImportOtherFilesDialog(const.ID_TREKKER_FOD)
+        filename = dlg.ShowImportOtherFilesDialog(const.ID_NIFTI_IMPORT, msg=_("Import Trekker FOD"))
         # Juuso
         # data_dir = os.environ.get('OneDriveConsumer') + '\\data\\dti'
         # FOD_path = 'sub-P0_dwi_FOD.nii'
@@ -1835,7 +1835,7 @@ class TractographyPanel(wx.Panel):
     def OnLoadACT(self, event=None):
         Publisher.sendMessage('Update status text in GUI', label=_("Busy"))
         Publisher.sendMessage('Begin busy cursor')
-        filename = dlg.ShowImportOtherFilesDialog(const.ID_TREKKER_ACT)
+        filename = dlg.ShowImportOtherFilesDialog(const.ID_NIFTI_IMPORT, msg=_("Import anatomical labels"))
         # Baran
         # data_dir = os.environ.get('OneDrive') + r'\data\dti_navigation\baran\anat_reg_improve_20200609'
         # act_path = 'Baran_trekkerACTlabels_inFODspace.nii'
