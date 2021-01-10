@@ -1451,9 +1451,9 @@ class Viewer(wx.Panel):
     #     self.ren.AddActor(self.mark_actor)
     #     self.Refresh()
 
-    def UpdateMarkerOffsetPosition(self, coord_offset):
-        self.mark_actor.SetPosition(coord_offset)
-        self.Refresh()
+    # def UpdateMarkerOffsetPosition(self, coord_offset):
+    #     self.mark_actor.SetPosition(coord_offset)
+    #     self.Refresh()
 
     def CreateMarkerOffset(self):
         self.mark_actor = self.add_marker([0., 0., 0.], color=[0., 1., 1.])
@@ -1519,7 +1519,7 @@ class Viewer(wx.Panel):
 
         self.Refresh()
 
-    def OnUpdateTracts(self, evt=None, flag=None, actor=None, root=None, affine_vtk=None, count=0):
+    def OnUpdateTracts(self, root=None, affine_vtk=None, coord_offset=None):
         mapper = vtk.vtkCompositePolyDataMapper2()
         mapper.SetInputDataObject(root)
 
@@ -1528,6 +1528,8 @@ class Viewer(wx.Panel):
         self.actor_tracts.SetUserMatrix(affine_vtk)
 
         self.ren.AddActor(self.actor_tracts)
+        if self.mark_actor:
+            self.mark_actor.SetPosition(coord_offset)
         self.Refresh()
 
     def OnRemoveTracts(self):
